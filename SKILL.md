@@ -584,10 +584,14 @@ continue," do NOT park-and-narrate.
 
 1. Write a handoff document (absolute paths, current watchlist state, in-flight PRs, per-repo
    freezes/traps, where the tooling lives) and save it where the successor can read it.
-2. Spawn a fresh session that reads the handoff **in full first** before acting. If your harness
-   distinguishes child/parent sessions, make sure the successor is a normal top-level session
-   (some harnesses skip transcript logging for child sessions, which breaks the next handoff's
-   tooling) — verify the successor writes its own transcript as one of its first checks.
+2. Spawn a fresh session that reads the handoff **in full first** before acting. On Claude
+   Code specifically, spawn the successor with the child flag UNSET —
+   `env -u CLAUDE_CODE_CHILD_SESSION claude ...` (e.g. in a new tmux pane of the same window):
+   a session started with `CLAUDE_CODE_CHILD_SESSION` set does NOT write its session-JSONL
+   transcript, which silently breaks archiving and the next handoff's transcript tooling. The
+   successor's FIRST verification is `ls` on the "Session JSONL" path from its own system
+   prompt — missing means the child flag leaked: STOP and tell the operator rather than run
+   the drive on an unarchivable session.
 3. The successor takes over the standing watcher (kill the predecessor's if it's single-instance,
    launch its own).
 4. After spawning, the old session stops dispatching (babysit only what's mid-flight, then idle).
